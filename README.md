@@ -3,7 +3,7 @@
 [![Package Version](https://img.shields.io/hexpm/v/pbkdf2)](https://hex.pm/packages/pbkdf2)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/pbkdf2/)
 
-A Gleam implementation of PBKDF2 (Password-Based Key Derivation Function 2) for Erlang.
+A Gleam implementation of PBKDF2 (Password-Based Key Derivation Function 2) for Erlang. Heavily indebted to [erlang-pbkdf2](github.com/whitelynx/erlang-pbkdf2).
 
 Currently a work in progress!
 
