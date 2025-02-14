@@ -11,7 +11,7 @@ Currently a work in progress!
 gleam add pinkdf2@1
 ```
 ```gleam
-import pinkdf2
+import pinkdf2.{type Pbkdf2Keys}
 
 pub fn main() {
   let assert Ok(Pbkdf2Keys(raw, base64)) = pinkdf2.with_defaults("password", pinkdf2.get_salt())
