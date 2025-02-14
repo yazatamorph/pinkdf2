@@ -1,5 +1,4 @@
 import gleam/bit_array
-import gleam/bytes_tree.{type BytesTree}
 import gleam/crypto.{type HashAlgorithm}
 import gleam/int
 
@@ -16,7 +15,8 @@ pub fn with_defaults(
   password: String,
   salt: String,
 ) -> Result(Pbkdf2Keys, Pbkdf2Error) {
-  let raw = with_defaults_(crypto.Sha256, password, salt_is_bits(salt), 600_000)
+  let raw =
+    with_defaults_(crypto.Sha256, <<password:utf8>>, <<salt:utf8>>, 600_000)
   Ok(Pbkdf2Keys(raw, bit_array.base64_encode(raw, True)))
 }
 
@@ -30,27 +30,26 @@ pub fn with_config(
   case allowed_algorithm(alg) {
     Error(e) -> Error(e)
     Ok(_) -> {
-      let salt = salt_is_bits(salt)
       let prf = new_prf(alg)
       case
         d_len_too_long(
-          prf(<<password:utf8>>, salt) |> bit_array.byte_size,
+          prf(<<password:utf8>>, <<salt:utf8>>) |> bit_array.byte_size,
           d_len,
         )
       {
-        False -> Error(KeyDerivedLengthTooLong)
-        True -> {
+        True -> Error(KeyDerivedLengthTooLong)
+        False -> {
           let raw =
             compute_key(
               prf,
-              bit_array.from_string(password),
-              salt,
+              <<password:utf8>>,
+              <<salt:utf8>>,
               iterations,
               d_len,
               1,
-              bytes_tree.new(),
+              <<>>,
             )
-          Ok(Pbkdf2Keys(raw, bit_array.base64_encode(raw, True)))
+          Ok(Pbkdf2Keys(raw, bit_array.base64_encode(raw, False)))
         }
       }
     }
@@ -62,22 +61,14 @@ pub fn get_salt() -> String
 
 fn with_defaults_(
   alg: HashAlgorithm,
-  password: String,
+  password: BitArray,
   salt: BitArray,
   iterations: Int,
 ) -> BitArray {
   let prf = new_prf(alg)
-  let d_len = prf(<<"derived":utf8>>, <<"length":utf8>>) |> bit_array.byte_size
+  let d_len = prf(password, salt) |> bit_array.byte_size
 
-  compute_key(
-    prf,
-    bit_array.from_string(password),
-    salt,
-    iterations,
-    d_len,
-    1,
-    bytes_tree.new(),
-  )
+  compute_key(prf, password, salt, iterations, d_len, 1, <<>>)
 }
 
 fn compute_key(
@@ -87,36 +78,21 @@ fn compute_key(
   iterations: Int,
   d_len: Int,
   block_idx: Int,
-  acc: BytesTree,
+  acc: BitArray,
 ) -> BitArray {
-  case bytes_tree.byte_size(acc) > d_len {
+  case bit_array.byte_size(acc) > d_len {
     True -> {
       let bit_len = d_len * 8
-      let assert <<key:bits-size(bit_len), _rest:bits>> =
-        bytes_tree.to_bit_array(acc)
+      let assert <<key:bits-size(bit_len), _rest:bits>> = acc
       key
     }
     False -> {
       let block =
-        compute_block(
-          prf,
-          password,
-          salt,
-          iterations,
-          block_idx,
-          1,
-          bytes_tree.new(),
-          bytes_tree.new(),
-        )
-      compute_key(
-        prf,
-        password,
-        salt,
-        iterations,
-        d_len,
-        block_idx + 1,
-        bytes_tree.prepend_tree(to: acc, prefix: block),
-      )
+        compute_block(prf, password, salt, iterations, block_idx, 1, <<>>, <<>>)
+      compute_key(prf, password, salt, iterations, d_len, block_idx + 1, <<
+        block:bits,
+        acc:bits,
+      >>)
     }
   }
 }
@@ -128,21 +104,17 @@ fn compute_block(
   iterations: Int,
   block_idx: Int,
   count: Int,
-  prev: BytesTree,
-  acc: BytesTree,
-) -> BytesTree {
+  prev: BitArray,
+  acc: BitArray,
+) -> BitArray {
   case count {
     count if count > iterations -> acc
     1 -> {
-      let init =
-        prf(password, <<salt:bits, block_idx:int-big-size(32)>>)
-        |> bytes_tree.from_bit_array
+      let init = prf(password, <<salt:bits, block_idx:int-big-size(32)>>)
       compute_block(prf, password, salt, iterations, block_idx, 2, init, init)
     }
     _ -> {
-      let next =
-        prf(password, bytes_tree.to_bit_array(prev))
-        |> bytes_tree.from_bit_array
+      let next = prf(password, prev)
       compute_block(
         prf,
         password,
@@ -157,17 +129,8 @@ fn compute_block(
   }
 }
 
-fn salt_is_bits(salt: String) -> BitArray {
-  bit_array.from_string(salt)
-}
-
-fn new_prf(alg: HashAlgorithm) {
-  fn(key: BitArray, data: BitArray) {
-    crypto.new_hasher(alg)
-    |> crypto.hash_chunk(key)
-    |> crypto.hash_chunk(data)
-    |> crypto.digest
-  }
+fn new_prf(alg: HashAlgorithm) -> fn(BitArray, BitArray) -> BitArray {
+  fn(key: BitArray, data: BitArray) { crypto.hmac(data, alg, key) }
 }
 
 fn max_key_length() -> Int {
@@ -196,4 +159,4 @@ fn allowed_algorithm(alg: HashAlgorithm) -> Result(HashAlgorithm, Pbkdf2Error) {
 }
 
 @external(erlang, "crypto", "exor")
-fn xor(a: BytesTree, b: BytesTree) -> BytesTree
+fn xor(a: BitArray, b: BitArray) -> BitArray
