@@ -17,7 +17,7 @@ pub fn with_defaults(
 ) -> Result(Pbkdf2Keys, Pbkdf2Error) {
   let raw =
     with_defaults_(crypto.Sha256, <<password:utf8>>, <<salt:utf8>>, 600_000)
-  Ok(Pbkdf2Keys(raw, bit_array.base64_encode(raw, True)))
+  Ok(Pbkdf2Keys(raw, bit_array.base64_encode(raw, False)))
 }
 
 pub fn with_config(
