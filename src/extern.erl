@@ -5,4 +5,5 @@
 get_salt() ->
   <<Num:32/integer>> = crypto:strong_rand_bytes(4),
   BytesNum = Num rem (1024 - 64) + 64,
-  crypto:strong_rand_bytes(BytesNum).
+  Raw = crypto:strong_rand_bytes(BytesNum),
+  base64:encode(Raw).
