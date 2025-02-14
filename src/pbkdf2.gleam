@@ -2,42 +2,70 @@ import gleam/bit_array
 import gleam/bytes_tree.{type BytesTree}
 import gleam/crypto.{type HashAlgorithm}
 import gleam/int
-import gleam/io
 
 pub type Pbkdf2Keys {
   Pbkdf2Keys(raw: BitArray, base64: String)
 }
 
-pub fn main() {
-  io.println("Hello from pbkdf2!")
-  let hash = sha256("password")
-  io.debug(hash)
+pub type Pbkdf2Error {
+  UnsupportedAlgorithm(String)
+  KeyDerivedLengthTooLong
 }
 
-pub fn sha256(password: String, salt: BitArray) -> Pbkdf2Keys {
-  let raw = with_defaults(crypto.Sha256, password, salt, 600_000)
-  Pbkdf2Keys(raw, bit_array.base64_encode(raw, True))
+pub fn with_defaults(
+  password: String,
+  salt: String,
+) -> Result(Pbkdf2Keys, Pbkdf2Error) {
+  let raw = with_defaults_(crypto.Sha256, password, salt_is_bits(salt), 600_000)
+  Ok(Pbkdf2Keys(raw, bit_array.base64_encode(raw, True)))
 }
 
-pub fn hash(
+pub fn with_config(
   alg: HashAlgorithm,
   password: String,
-  salt: BitArray,
+  salt: String,
   iterations: Int,
   d_len: Int,
-) {
-  todo as "Should check alg is allowed and d_len not too long, then run compute_key as normal"
+) -> Result(Pbkdf2Keys, Pbkdf2Error) {
+  case allowed_algorithm(alg) {
+    Error(e) -> Error(e)
+    Ok(_) -> {
+      let salt = salt_is_bits(salt)
+      let prf = new_prf(alg)
+      case
+        d_len_too_long(
+          prf(<<password:utf8>>, salt) |> bit_array.byte_size,
+          d_len,
+        )
+      {
+        False -> Error(KeyDerivedLengthTooLong)
+        True -> {
+          let raw =
+            compute_key(
+              prf,
+              bit_array.from_string(password),
+              salt,
+              iterations,
+              d_len,
+              1,
+              bytes_tree.new(),
+            )
+          Ok(Pbkdf2Keys(raw, bit_array.base64_encode(raw, True)))
+        }
+      }
+    }
+  }
 }
 
 @external(erlang, "extern", "get_salt")
-pub fn get_salt() -> BitArray
+pub fn get_salt() -> String
 
-fn with_defaults(
+fn with_defaults_(
   alg: HashAlgorithm,
   password: String,
   salt: BitArray,
   iterations: Int,
-) {
+) -> BitArray {
   let prf = new_prf(alg)
   let d_len = prf(<<"derived":utf8>>, <<"length":utf8>>) |> bit_array.byte_size
 
@@ -60,7 +88,7 @@ fn compute_key(
   d_len: Int,
   block_idx: Int,
   acc: BytesTree,
-) {
+) -> BitArray {
   case bytes_tree.byte_size(acc) > d_len {
     True -> {
       let bit_len = d_len * 8
@@ -102,7 +130,7 @@ fn compute_block(
   count: Int,
   prev: BytesTree,
   acc: BytesTree,
-) {
+) -> BytesTree {
   case count {
     count if count > iterations -> acc
     1 -> {
@@ -129,6 +157,10 @@ fn compute_block(
   }
 }
 
+fn salt_is_bits(salt: String) -> BitArray {
+  bit_array.from_string(salt)
+}
+
 fn new_prf(alg: HashAlgorithm) {
   fn(key: BitArray, data: BitArray) {
     crypto.new_hasher(alg)
@@ -142,23 +174,23 @@ fn max_key_length() -> Int {
   int.bitwise_shift_left(1, 32) |> int.subtract(1)
 }
 
-fn d_len_too_long(hash_len: Int, d_len: Int) -> Bool {
+fn d_len_too_long(h_len: Int, d_len: Int) -> Bool {
   let max_len =
     max_key_length()
-    |> int.multiply(hash_len)
+    |> int.multiply(h_len)
   d_len > max_len
 }
 
-fn allowed_algorithm(alg: HashAlgorithm) -> Result(HashAlgorithm, String) {
+fn allowed_algorithm(alg: HashAlgorithm) -> Result(HashAlgorithm, Pbkdf2Error) {
   case alg {
     crypto.Md5 ->
-      Error(
+      Error(UnsupportedAlgorithm(
         "Insecure algorithm. Please select Sha224, Sha256, Sha384, or Sha512.",
-      )
+      ))
     crypto.Sha1 ->
-      Error(
+      Error(UnsupportedAlgorithm(
         "Insecure algorithm. Please select Sha224, Sha256, Sha384, or Sha512.",
-      )
+      ))
     _ -> Ok(alg)
   }
 }
