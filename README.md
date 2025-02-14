@@ -1,24 +1,24 @@
-# pbkdf2
+# pinkdf2
 
-[![Package Version](https://img.shields.io/hexpm/v/pbkdf2)](https://hex.pm/packages/pbkdf2)
-[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/pbkdf2/)
+[![Package Version](https://img.shields.io/hexpm/v/pinkdf2)](https://hex.pm/packages/pinkdf2)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/pinkdf2/)
 
 A Gleam implementation of PBKDF2 (Password-Based Key Derivation Function 2) for Erlang. Heavily indebted to [erlang-pbkdf2](github.com/whitelynx/erlang-pbkdf2).
 
 Currently a work in progress!
 
 ```sh
-gleam add pbkdf2@1
+gleam add pinkdf2@1
 ```
 ```gleam
-import pbkdf2
+import pinkdf2
 
 pub fn main() {
-  // TODO: An example of the project in use
+  let assert Ok(Pbkdf2Keys(raw, base64)) = pinkdf2.with_defaults("password", pinkdf2.get_salt())
 }
 ```
 
-Further documentation can be found at <https://hexdocs.pm/pbkdf2>.
+Further documentation can be found at <https://hexdocs.pm/pinkdf2>.
 
 ## Development
 
