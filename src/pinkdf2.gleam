@@ -1,3 +1,6 @@
+//// Password-Based Key Derivation Function 2 in Gleam for Erlang as defined in RFC 2898
+//// https://datatracker.ietf.org/doc/html/rfc2898
+
 import gleam/bit_array
 import gleam/crypto.{type HashAlgorithm}
 import gleam/int
@@ -11,6 +14,8 @@ pub type Pbkdf2Error {
   KeyDerivedLengthTooLong
 }
 
+/// Derives a key from a password and salt with default settings based on the
+/// (OWASP recommendations)[https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2].
 pub fn with_defaults(
   password: String,
   salt: String,
@@ -20,6 +25,20 @@ pub fn with_defaults(
   Ok(Pbkdf2Keys(raw, bit_array.base64_encode(raw, False)))
 }
 
+/// Derives a key using the provided configuration.
+///
+/// `alg` may be any algorithm from `crypto.HashAlgorithm` except for `Md5` and `Sha1`.
+/// 'd_len' is the targeted derived key length in bytes.
+///
+/// ## Examples
+///
+/// ```gleam
+/// import gleam/crypto
+/// import pinkdf2
+///
+/// let salt = pinkdf2.get_salt()
+/// let assert Ok(key) = pinkdf2.with_config(crypto.Sha512, "password", salt, 210_000, 32)
+/// ```
 pub fn with_config(
   alg: HashAlgorithm,
   password: String,
@@ -56,6 +75,8 @@ pub fn with_config(
   }
 }
 
+/// Generates a base64-encoded salt with a minimum size of 64 bytes.
+/// It is provided here for convenience, but it is based on the same underlying Erlang function as `crypto.strong_rand_bytes`.
 @external(erlang, "extern", "get_salt")
 pub fn get_salt() -> String
 
@@ -67,7 +88,6 @@ fn with_defaults_(
 ) -> BitArray {
   let prf = new_prf(alg)
   let d_len = prf(password, salt) |> bit_array.byte_size
-
   compute_key(prf, password, salt, iterations, d_len, 1, <<>>)
 }
 
