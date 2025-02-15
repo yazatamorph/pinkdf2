@@ -5,8 +5,6 @@
 
 A Gleam implementation of PBKDF2 (Password-Based Key Derivation Function 2) for Erlang. Heavily indebted to [erlang-pbkdf2](github.com/whitelynx/erlang-pbkdf2).
 
-Currently a work in progress!
-
 ```sh
 gleam add pinkdf2@1
 ```
