@@ -9,18 +9,11 @@ A Gleam implementation of PBKDF2 (Password-Based Key Derivation Function 2) for 
 gleam add pinkdf2@1
 ```
 ```gleam
-import pinkdf2.{type Pbkdf2Keys}
+import pinkdf2
 
 pub fn main() {
-  let assert Ok(Pbkdf2Keys(raw, base64)) = pinkdf2.with_defaults("password", pinkdf2.get_salt())
+  let assert Ok(key) = pinkdf2.with_defaults("password", pinkdf2.get_salt())
 }
 ```
 
 Further documentation can be found at <https://hexdocs.pm/pinkdf2>.
-
-## Development
-
-```sh
-gleam run   # Run the project
-gleam test  # Run the tests
-```
