@@ -21,9 +21,12 @@ pub type Pbkdf2Error {
 
 /// Derives a key from a password and salt with default settings based on the
 /// (OWASP recommendations)[https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2].
-pub fn with_defaults(password: String, salt: String) -> Pbkdf2Keys {
+pub fn with_defaults(
+  password: String,
+  salt: String,
+) -> Result(Pbkdf2Keys, Pbkdf2Error) {
   let raw = fp_defaults(password, salt)
-  Pbkdf2Keys(raw, bit_array.base64_encode(raw, False))
+  Ok(Pbkdf2Keys(raw, bit_array.base64_encode(raw, False)))
 }
 
 /// Derives a key using the provided configuration.
