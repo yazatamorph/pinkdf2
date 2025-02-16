@@ -1,8 +1,7 @@
 import gleam/bit_array
-import gleam/crypto
 import gleeunit
 import gleeunit/should
-import pinkdf2
+import pinkdf2.{Sha256}
 
 pub fn main() {
   gleeunit.main()
@@ -20,8 +19,7 @@ pub fn sha256_vector_1_test() {
   >>
   let base64_should = bit_array.base64_encode(raw_should, False)
 
-  let assert Ok(keys) =
-    pinkdf2.with_config(crypto.Sha256, "password", "salt", 1, 20)
+  let assert Ok(keys) = pinkdf2.with_config(Sha256, "password", "salt", 1, 20)
   #(keys.raw, keys.base64)
   |> should.equal(#(raw_should, base64_should))
 }
@@ -33,8 +31,7 @@ pub fn sha256_vector_2_test() {
   >>
   let base64_should = bit_array.base64_encode(raw_should, False)
 
-  let assert Ok(keys) =
-    pinkdf2.with_config(crypto.Sha256, "password", "salt", 2, 20)
+  let assert Ok(keys) = pinkdf2.with_config(Sha256, "password", "salt", 2, 20)
   #(keys.raw, keys.base64)
   |> should.equal(#(raw_should, base64_should))
 }
@@ -47,7 +44,7 @@ pub fn sha256_vector_3_test() {
   let base64_should = bit_array.base64_encode(raw_should, False)
 
   let assert Ok(keys) =
-    pinkdf2.with_config(crypto.Sha256, "password", "salt", 4096, 20)
+    pinkdf2.with_config(Sha256, "password", "salt", 4096, 20)
   #(keys.raw, keys.base64)
   |> should.equal(#(raw_should, base64_should))
 }
@@ -61,7 +58,7 @@ pub fn sha256_vector_4_test() {
 
   let assert Ok(keys) =
     pinkdf2.with_config(
-      crypto.Sha256,
+      Sha256,
       "passwordPASSWORDpassword",
       "saltSALTsaltSALTsaltSALTsaltSALTsalt",
       4096,
@@ -79,13 +76,7 @@ pub fn sha256_vector_5_test() {
   let base64_should = bit_array.base64_encode(raw_should, False)
 
   let assert Ok(keys) =
-    pinkdf2.with_config(
-      crypto.Sha256,
-      "pass\u{000}word",
-      "sa\u{000}lt",
-      4096,
-      16,
-    )
+    pinkdf2.with_config(Sha256, "pass\u{000}word", "sa\u{000}lt", 4096, 16)
   #(keys.raw, keys.base64)
   |> should.equal(#(raw_should, base64_should))
 }

@@ -1,7 +1,7 @@
 name = "pinkdf2"
-version = "1.0.0"
+version = "1.1.0"
 
-description = "A Gleam implementation of PBKDF2 (Password-Based Key Derivation Function 2) for Erlang."
+description = "Gleam bindings to fast_pbkdf2 NIF of PBKDF2 (Password-Based Key Derivation Function 2) for Erlang."
 licences = ["Apache-2.0"]
 repository = { type = "github", user = "yazatamorph", repo = "pinkdf2" }
 target = "erlang"
@@ -9,6 +9,7 @@ target = "erlang"
 [dependencies]
 gleam_stdlib = ">= 0.44.0 and < 2.0.0"
 gleam_crypto = ">= 1.4.0 and < 2.0.0"
+fast_pbkdf2 = ">= 1.0.6 and < 2.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
