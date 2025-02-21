@@ -1,7 +1,7 @@
 import gleam/bit_array
 import gleeunit
 import gleeunit/should
-import pinkdf2.{Sha256}
+import pinkdf2.{Bits224, Bits256, Bits384, Bits512, Sha2, Sha256, Sha3}
 
 pub fn main() {
   gleeunit.main()
@@ -79,6 +79,46 @@ pub fn sha256_vector_5_test() {
     pinkdf2.with_config(Sha256, "pass\u{000}word", "sa\u{000}lt", 4096, 16)
   #(keys.raw, keys.base64)
   |> should.equal(#(raw_should, base64_should))
+}
+
+pub fn sha2_bits224_test() {
+  pinkdf2.with_config(Sha2(Bits224), "password", "salt", 1, 16)
+  |> should.be_ok
+}
+
+pub fn sha2_bits256_test() {
+  pinkdf2.with_config(Sha2(Bits256), "password", "salt", 1, 16)
+  |> should.be_ok
+}
+
+pub fn sha2_bits384_test() {
+  pinkdf2.with_config(Sha2(Bits384), "password", "salt", 1, 16)
+  |> should.be_ok
+}
+
+pub fn sha2_bits512_test() {
+  pinkdf2.with_config(Sha2(Bits512), "password", "salt", 1, 16)
+  |> should.be_ok
+}
+
+pub fn sha3_bits224_test() {
+  pinkdf2.with_config(Sha3(Bits224), "password", "salt", 1, 16)
+  |> should.be_ok
+}
+
+pub fn sha3_bits256_test() {
+  pinkdf2.with_config(Sha3(Bits256), "password", "salt", 1, 16)
+  |> should.be_ok
+}
+
+pub fn sha3_bits384_test() {
+  pinkdf2.with_config(Sha3(Bits384), "password", "salt", 1, 16)
+  |> should.be_ok
+}
+
+pub fn sha3_bits512_test() {
+  pinkdf2.with_config(Sha3(Bits512), "password", "salt", 1, 16)
+  |> should.be_ok
 }
 
 pub fn generated_salt_length_test() {
