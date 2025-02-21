@@ -58,10 +58,10 @@ pub fn with_defaults(
 /// ## Examples
 ///
 /// ```gleam
-/// import pinkdf2.{Sha512}
+/// import pinkdf2.{Bits512,Sha2}
 ///
 /// let salt = pinkdf2.get_salt()
-/// let assert Ok(key) = pinkdf2.with_config(Sha512, "password", salt, 210_000, 32)
+/// let assert Ok(key) = pinkdf2.with_config(Sha2(Bits512), "password", salt, 210_000, 32)
 /// ```
 pub fn with_config(
   alg: Pbkdf2Algorithm,
