@@ -6,7 +6,7 @@
 Gleam bindings to the heavily-optimized [fast_pbkdf2](https://github.com/esl/fast_pbkdf2) NIF for PBKDF2 (Password-Based Key Derivation Function 2) on Erlang.
 
 ```sh
-gleam add pinkdf2@1
+gleam add pinkdf2@2
 ```
 ```gleam
 import pinkdf2
