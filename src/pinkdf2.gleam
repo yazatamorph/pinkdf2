@@ -1,13 +1,22 @@
 //// Gleam bindings to fast_pbkdf2 NIF of PBKDF2 (Password-Based Key Derivation Function 2) for Erlang.
 
 import gleam/bit_array
-import gleam/crypto.{type HashAlgorithm}
+import gleam/io
 
 pub type Pbkdf2Keys {
   Pbkdf2Keys(raw: BitArray, base64: String)
 }
 
+pub type ShaDigestSize {
+  Bits224
+  Bits256
+  Bits384
+  Bits512
+}
+
 pub type Pbkdf2Algorithm {
+  Sha2(ShaDigestSize)
+  Sha3(ShaDigestSize)
   Sha224
   Sha256
   Sha384
@@ -15,8 +24,19 @@ pub type Pbkdf2Algorithm {
 }
 
 pub type Pbkdf2Error {
-  IterationsValueNotPositive
-  DerivedKeyLengthValueNotPositive
+  AllocFailed
+  BadBlockCounter
+  BadHash
+  BadIterationCount
+  BadPassword
+  BadSalt
+  CtxAllocationFailed
+  CtxCopyFailed
+  DigestFinalFailed
+  DigestInitFailed
+  DigestInitEx2Failed
+  DigestUpdateFailed
+  HmacInitFailed
 }
 
 /// Derives a key from a password and salt with default settings based on the
@@ -25,8 +45,10 @@ pub fn with_defaults(
   password: String,
   salt: String,
 ) -> Result(Pbkdf2Keys, Pbkdf2Error) {
-  let raw = fp_defaults(password, salt)
-  Ok(Pbkdf2Keys(raw, bit_array.base64_encode(raw, False)))
+  case fp_defaults(password, salt) {
+    Ok(raw) -> Ok(Pbkdf2Keys(raw, bit_array.base64_encode(raw, False)))
+    Error(e) -> Error(e)
+  }
 }
 
 /// Derives a key using the provided configuration.
@@ -49,15 +71,9 @@ pub fn with_config(
   iterations: Int,
   d_len: Int,
 ) -> Result(Pbkdf2Keys, Pbkdf2Error) {
-  case is_positive(iterations), is_positive(d_len) {
-    False, _ -> Error(IterationsValueNotPositive)
-    _, False -> Error(DerivedKeyLengthValueNotPositive)
-    _, _ -> {
-      let raw =
-        map_algorithm(alg)
-        |> fp_config(password, salt, iterations, d_len)
-      Ok(Pbkdf2Keys(raw, bit_array.base64_encode(raw, False)))
-    }
+  case fp_config(alg, password, salt, iterations, d_len) {
+    Ok(raw) -> Ok(Pbkdf2Keys(raw, bit_array.base64_encode(raw, False)))
+    Error(e) -> Error(e)
   }
 }
 
@@ -66,27 +82,14 @@ pub fn with_config(
 @external(erlang, "extern", "get_salt")
 pub fn get_salt() -> String
 
-fn map_algorithm(alg: Pbkdf2Algorithm) -> HashAlgorithm {
-  case alg {
-    Sha224 -> crypto.Sha224
-    Sha256 -> crypto.Sha256
-    Sha384 -> crypto.Sha384
-    Sha512 -> crypto.Sha512
-  }
-}
-
-fn is_positive(num: Int) -> Bool {
-  num > 0
-}
-
 @external(erlang, "extern", "fp_with_defaults")
-fn fp_defaults(password: String, salt: String) -> BitArray
+fn fp_defaults(password: String, salt: String) -> Result(BitArray, Pbkdf2Error)
 
-@external(erlang, "fast_pbkdf2", "pbkdf2")
+@external(erlang, "extern", "fp_with_config")
 fn fp_config(
-  alg: HashAlgorithm,
+  alg: Pbkdf2Algorithm,
   password: String,
   salt: String,
   iterations: Int,
   d_len: Int,
-) -> BitArray
+) -> Result(BitArray, Pbkdf2Error)
