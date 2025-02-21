@@ -1,7 +1,6 @@
 //// Gleam bindings to fast_pbkdf2 NIF of PBKDF2 (Password-Based Key Derivation Function 2) for Erlang.
 
 import gleam/bit_array
-import gleam/io
 
 pub type Pbkdf2Keys {
   Pbkdf2Keys(raw: BitArray, base64: String)
